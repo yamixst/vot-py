@@ -176,7 +176,7 @@ async def run_translation(
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="vot-py CLI: Translate videos using Yandex Video Translation API"
+        description="yavot-py CLI: Translate videos using Yandex Video Translation API"
     )
     parser.add_argument("url", help="URL of the video to translate (e.g. YouTube, Vimeo, Twitch)")
     parser.add_argument(

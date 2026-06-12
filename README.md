@@ -1,6 +1,6 @@
-# vot-py
+# yavot-py
 
-`vot-py` is a modern, fast, and fully type-safe Python library for interacting with the **Yandex Video Translation API**. This library is a Python port of the popular TypeScript library `vot.js`.
+`yavot-py` is a modern, fast, and fully type-safe Python library for interacting with the **Yandex Video Translation API**. This library is a Python port of the popular TypeScript library `vot.js`.
 
 It allows you to request video translations, poll processing status, obtain translated voice-over audio URLs, fetch original and translated subtitles, download and convert subtitle formats, and translate live streams in real time.
 

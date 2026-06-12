@@ -1,6 +1,6 @@
-# Agent Instructions for `vot-py` Maintenance & Development
+# Agent Instructions for `yavot-py` Maintenance & Development
 
-You are an AI Agent tasked with maintaining, extending, or debugging `vot-py`, a modern, high-quality Python library for interacting with the Yandex Video Translation API.
+You are an AI Agent tasked with maintaining, extending, or debugging `yavot-py`, a modern, high-quality Python library for interacting with the Yandex Video Translation API.
 
 The initial port from the TypeScript `vot.js` library has been completed. These instructions outline the established architecture, technology stack, and best practices. **Always refer to these guidelines when making modifications.**
 
@@ -8,7 +8,7 @@ The initial port from the TypeScript `vot.js` library has been completed. These 
 
 ## 1. Project Overview & Tech Stack
 
-`vot-py` is a fully typed, asynchronous Python package targeting desktop and server environments.
+`yavot-py` is a fully typed, asynchronous Python package targeting desktop and server environments.
 
 ### Established Tech Stack
 - **Python Version**: 3.10+ (Modern typing and language features).
@@ -24,7 +24,7 @@ The initial port from the TypeScript `vot.js` library has been completed. These 
 
 ## 2. Python Library Best Practices
 
-All agents contributing to `vot-py` MUST adhere to the following Python library best practices:
+All agents contributing to `yavot-py` MUST adhere to the following Python library best practices:
 
 1. **Strict Type Hinting**: Every function signature and class must have proper type hints. Use `typing` features extensively (e.g., `Optional`, `Union`, `Literal`, or new syntax `X | Y`).
 2. **Docstrings**: Use Google-style or NumPy-style docstrings for all public modules, classes, and functions.
@@ -40,7 +40,7 @@ All agents contributing to `vot-py` MUST adhere to the following Python library 
 The repository is structured as a standard Python package:
 
 ```text
-vot-py/
+yavot-py/
 ├── pyproject.toml         # Project metadata, dependencies, and tool configs
 ├── README.md              # English documentation
 ├── README.ru.md           # Russian documentation

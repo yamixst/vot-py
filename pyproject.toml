@@ -1,5 +1,5 @@
 [project]
-name = "vot-py"
+name = "yavot-py"
 version = "0.1.0"
 description = "A Python port of the vot.js library for interacting with Yandex Video Translation API"
 readme = "README.md"
@@ -19,7 +19,7 @@ classifiers = [
     "Topic :: Multimedia :: Sound/Audio :: Speech",
     "Topic :: Multimedia :: Video",
 ]
-keywords = ["yandex", "video", "translation", "subtitles", "voiceover", "vot", "vot-py"]
+keywords = ["yandex", "video", "translation", "subtitles", "voiceover", "vot", "yavot-py"]
 dependencies = [
     "httpx>=0.24.0",
     "protobuf>=4.21.0",
@@ -27,10 +27,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yamixst/vot-py"
-Repository = "https://github.com/yamixst/vot-py"
-Issues = "https://github.com/yamixst/vot-py/issues"
-Documentation = "https://github.com/yamixst/vot-py/tree/main/docs"
+Homepage = "https://github.com/yamixst/yavot-py"
+Repository = "https://github.com/yamixst/yavot-py"
+Issues = "https://github.com/yamixst/yavot-py/issues"
+Documentation = "https://github.com/yamixst/yavot-py/tree/main/docs"
 
 [project.optional-dependencies]
 dev = [

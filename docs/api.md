@@ -1,6 +1,6 @@
-# vot-py API Documentation
+# yavot-py API Documentation
 
-This document provides a detailed API reference for developers using the `vot-py` library.
+This document provides a detailed API reference for developers using the `yavot-py` library.
 
 ---
 
