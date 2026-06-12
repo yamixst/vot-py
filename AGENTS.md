@@ -1,24 +1,24 @@
-# Agent Instructions for Porting `vot.js` to `vot-py`
+# Agent Instructions for `vot-py` Maintenance & Development
 
-You are an AI Agent tasked with helping the USER rewrite `vot.js` (an unofficial library for interacting with the Yandex VOT API) into a modern, high-quality Python library (`vot-py`).
+You are an AI Agent tasked with maintaining, extending, or debugging `vot-py`, a modern, high-quality Python library for interacting with the Yandex Video Translation API.
 
-These instructions outline the architecture, tech stack, and step-by-step implementation plan. **Always refer to these guidelines when making architectural decisions or generating code.**
+The initial port from the TypeScript `vot.js` library has been completed. These instructions outline the established architecture, technology stack, and best practices. **Always refer to these guidelines when making modifications.**
 
 ---
 
 ## 1. Project Overview & Tech Stack
 
-The goal is to port the TypeScript-based `vot.js` (which consists of `core`, `node`, `ext`, `shared` packages) into a cohesive Python package. Unlike JavaScript which has distinct Node and Browser Extension environments, the Python library will primarily target standard desktop/server environments.
+`vot-py` is a fully typed, asynchronous Python package targeting desktop and server environments.
 
-### Recommended Tech Stack
+### Established Tech Stack
 - **Python Version**: 3.10+ (Modern typing and language features).
-- **Dependency Management**: `uv`
-- **HTTP Client**: `httpx` (Provides both synchronous and asynchronous clients, similar to Node's `fetch` but more Pythonic).
-- **Protobuf**: `protobuf` (Google's official Python implementation) or `betterproto` for cleaner dataclass generation.
-- **Data Validation/Models**: `pydantic` or standard `dataclasses`.
+- **Dependency Management**: `uv` (Use `uv run`, `uv add`, etc.).
+- **HTTP Client**: `httpx` (Asynchronous and synchronous clients).
+- **Protobuf**: `protobuf` (Google's official Python implementation).
+- **Data Validation/Models**: `pydantic` (v2).
 - **Testing**: `pytest` + `pytest-asyncio`.
-- **Linting & Formatting**: `ruff` (replaces Black, Flake8, and isort).
-- **Type Checking**: `mypy` or `pyright`.
+- **Linting & Formatting**: `ruff`.
+- **Type Checking**: `mypy`.
 
 ---
 
@@ -26,80 +26,47 @@ The goal is to port the TypeScript-based `vot.js` (which consists of `core`, `no
 
 All agents contributing to `vot-py` MUST adhere to the following Python library best practices:
 
-1. **Strict Type Hinting**: Every function signature and class must have proper type hints. Use `typing` features extensively (e.g., `Optional`, `Union`, `Literal`, or new syntax `X | Y`).
-2. **Docstrings**: Use Google-style or NumPy-style docstrings for all public modules, classes, and functions. This makes it easy to generate documentation later (e.g., using Sphinx or MkDocs).
-3. **Async First, Sync Optional**: The Yandex VOT API relies on network requests. Implement the core client asynchronously using `httpx.AsyncClient`. You can provide a synchronous wrapper if necessary, but network-bound libraries in Python should support `asyncio`.
-4. **Exception Handling**: Do not use bare `except:` clauses. Define custom exceptions (e.g., `VOTError`, `VOTAPIError`, `VideoNotFoundError`) inheriting from Python's standard `Exception` to make error handling intuitive for library users.
-5. **Clean Imports**: Use absolute imports (`from vot.core import client`) or explicit relative imports (`from . import utils`).
-6. **No Global State**: Ensure that instances of the client do not leak state globally. Sessions and configurations should be bound to the client instance.
+1. **Strict Type Hinting**: Every function signature and class must have proper type hints. Run `uv run mypy src tests` to ensure 0 errors.
+2. **Linting and Formatting**: Code must comply with the configured `ruff` rules. Always run `uv run ruff format src tests` and `uv run ruff check src tests`.
+3. **Async First, Sync Optional**: The core client uses `httpx.AsyncClient`. A synchronous wrapper (`VOTClientSync`) is provided.
+4. **Exception Handling**: Use custom exceptions (e.g., `VOTError`, `VOTAPIError`, `VideoDataError`) from `src/vot/exceptions.py`.
+5. **Testing**: All new features must be covered by mock-based unit tests in the `tests/` directory. Run `uv run pytest`.
+6. **Bilingual Documentation**: User-facing documentation (`README.md`, `docs/api.md`) must be maintained in both English and Russian (`README.ru.md`, `docs/api.ru.md`).
 
 ---
 
-## 3. Project Architecture (Proposed)
+## 3. Project Architecture
 
-We should flatten the TypeScript monorepo into a single structured Python package:
+The repository is structured as a standard Python package:
 
 ```text
 vot-py/
-├── pyproject.toml         # Project metadata and dependencies
-├── README.md              # Project documentation
+├── pyproject.toml         # Project metadata, dependencies, and tool configs
+├── README.md              # English documentation
+├── README.ru.md           # Russian documentation
+├── docs/                  # API documentation (English & Russian)
+├── scripts/
+│   └── generate_proto.sh  # Script to recompile protobuf bindings
 ├── src/
 │   └── vot/
-│       ├── __init__.py    # Expose the main VOTClient / VOTWorkerClient
-│       ├── client.py      # Core client implementation (sync/async)
-│       ├── worker.py      # VOTWorkerClient implementation
-│       ├── models.py      # Pydantic models / Dataclasses for request/response payloads
-│       ├── protobuf/      # Generated protobuf files
-│       │   ├── __init__.py
-│       │   └── video_translation_pb2.py
-│       ├── utils/
-│       │   ├── __init__.py
-│       │   ├── crypto.py  # Request signing / HMAC logic
-│       │   └── url.py     # Video URL parsing and data extraction
-│       └── exceptions.py  # Custom exceptions
-├── tests/
-│   ├── conftest.py
-│   ├── test_client.py
-│   └── test_utils.py
-└── scripts/               # Scripts for protoc generation, etc.
+│       ├── __init__.py    # Exposes main clients and models
+│       ├── cli.py         # CLI implementation & argument parsing
+│       ├── client.py      # Core clients (MinimalClient, VOTClient, VOTClientSync, VOTWorkerClient)
+│       ├── config.py      # Global configurations and constants
+│       ├── exceptions.py  # Custom exception hierarchy
+│       ├── models.py      # Pydantic data models
+│       ├── helpers/       # Domain-specific extractors (e.g., youtube.py)
+│       ├── protobuf/      # Yandex Protobuf schemas and compiled python files
+│       └── utils/         # Crypto, URL parsing, subtitles conversion, and language normalization
+├── tests/                 # Comprehensive pytest suite
+└── vot-cli                # Bash wrapper for local CLI testing
 ```
 
 ---
 
-## 4. Implementation Phases
+## 4. Agent Workflow Rules
 
-Agents should tackle the porting process in these sequential phases:
-
-### Phase 1: Project Initialization & Tooling
-- Initialize the Python project using `uv init --lib`.
-- Setup `pyproject.toml` with `ruff`, `pytest`, `httpx`, and `protobuf`.
-- Configure linting and formatting rules.
-
-### Phase 2: Protobuf Generation
-- Locate the `.proto` files from `vot.js` or write a script to fetch them.
-- Use `protoc` to generate Python bindings into `src/vot/protobuf/`.
-- Ensure the generated code can be cleanly imported without path issues.
-
-### Phase 3: Core Utilities & Data Models
-- Port the URL parsing logic (`utils/url.py`) to extract video IDs and domains from various platforms (YouTube, etc.).
-- Port any cryptographic or signing mechanisms needed for the Yandex API (`utils/crypto.py`).
-- Define Pydantic models or standard Dataclasses for inputs/outputs (`models.py`).
-
-### Phase 4: The Core Client
-- Implement the base `VOTClient` in `client.py` using `httpx.AsyncClient`.
-- Implement `translateVideo` and `getVideoData` methods.
-- Handle protobuf serialization (requests) and deserialization (responses).
-- Implement the `VOTWorkerClient` proxy logic.
-
-### Phase 5: Testing & CI
-- Write unit tests in `tests/` mocking the HTTP responses.
-- Ensure all logic (URL parsing, crypto, protobuf packing) has 100% coverage.
-- Add GitHub Actions for Python CI (similar to `build.yml` in the JS project).
-
----
-
-## 5. Agent Workflow Tips
-
-- **Read Before Writing**: Use `view_file` on `../vot.js/packages/core/src/...` to understand the original TypeScript implementation before writing the Python equivalent.
-- **Small Commits / Edits**: When making changes, modify one module at a time and write tests alongside the implementation.
-- **Run Type Checks**: Continuously run `mypy src/vot` or `ruff check` to ensure code quality throughout the session.
+1. **Test Before Commit**: You must successfully run `pytest`, `mypy`, and `ruff` before claiming a task is complete or committing changes.
+2. **Modifying Protobufs**: If you update `src/vot/protobuf/yandex.proto`, you MUST execute `./scripts/generate_proto.sh` to regenerate `yandex_pb2.py`.
+3. **CLI Updates**: If you add new functionality to the CLI (`src/vot/cli.py`), make sure to write corresponding tests in `tests/test_cli.py` and update the READMEs.
+4. **Small, Descriptive Commits**: Keep changes atomic and commit messages clear (e.g., `feat: add support for new video host`, `fix: resolve mypy typing error in client`).
