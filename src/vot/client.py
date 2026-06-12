@@ -349,14 +349,14 @@ class VOTClient(MinimalClient):
         resp = VideoTranslationResponse()
         resp.ParseFromString(res["data"])
 
-        # Status matching (0: failed, 1: finished, 2: waiting, 3: long_waiting, 4: audio_requested, 10: session_required)
+        # Status matching (0: FAILED, 1: FINISHED, 2: WAITING, 3: LONG_WAITING, 5: PART_CONTENT, 6: AUDIO_REQUESTED, 7: SESSION_REQUIRED)
         status = resp.status
         translation_id = resp.translationId
         remaining_time = resp.remainingTime if resp.HasField("remainingTime") else -1
 
         if status == 0:
             raise VOTJSError("Yandex couldn't translate video", resp)
-        elif status in (1, 2):  # 1: Success / Finished, 2: Part Content
+        elif status in (1, 5):  # 1: FINISHED, 5: PART_CONTENT
             if not resp.url:
                 raise VOTJSError("Audio link wasn't received from Yandex response", resp)
             return TranslationResponse(
@@ -366,14 +366,14 @@ class VOTClient(MinimalClient):
                 status=status,
                 remainingTime=remaining_time,
             )
-        elif status in (3, 5):  # 3: Waiting, 5: Long Waiting
+        elif status in (2, 3):  # 2: WAITING, 3: LONG_WAITING
             return TranslationResponse(
                 translationId=translation_id,
                 translated=False,
                 status=status,
                 remainingTime=remaining_time,
             )
-        elif status == 4:  # Audio Requested
+        elif status == 6:  # 6: AUDIO_REQUESTED
             if url.startswith("https://youtu.be/") and should_send_failed_audio:
                 # Trigger fake failure / upload to bypass waiting loop on new videos
                 await self.request_vtrans_fail_audio(url)
@@ -398,7 +398,7 @@ class VOTClient(MinimalClient):
                 status=status,
                 remainingTime=remaining_time,
             )
-        elif status == 10:
+        elif status == 7:  # 7: SESSION_REQUIRED
             raise VOTJSError("Yandex auth required to translate video. See docs.", resp)
         else:
             raise VOTJSError("Unknown response status from Yandex", resp)
