@@ -26,12 +26,12 @@ The initial port from the TypeScript `vot.js` library has been completed. These 
 
 All agents contributing to `vot-py` MUST adhere to the following Python library best practices:
 
-1. **Strict Type Hinting**: Every function signature and class must have proper type hints. Run `uv run mypy src tests` to ensure 0 errors.
-2. **Linting and Formatting**: Code must comply with the configured `ruff` rules. Always run `uv run ruff format src tests` and `uv run ruff check src tests`.
+1. **Strict Type Hinting**: Every function signature and class must have proper type hints. Use `typing` features extensively (e.g., `Optional`, `Union`, `Literal`, or new syntax `X | Y`).
+2. **Docstrings**: Use Google-style or NumPy-style docstrings for all public modules, classes, and functions.
 3. **Async First, Sync Optional**: The core client uses `httpx.AsyncClient`. A synchronous wrapper (`VOTClientSync`) is provided.
-4. **Exception Handling**: Use custom exceptions (e.g., `VOTError`, `VOTAPIError`, `VideoDataError`) from `src/vot/exceptions.py`.
-5. **Testing**: All new features must be covered by mock-based unit tests in the `tests/` directory. Run `uv run pytest`.
-6. **Bilingual Documentation**: User-facing documentation (`README.md`, `docs/api.md`) must be maintained in both English and Russian (`README.ru.md`, `docs/api.ru.md`).
+4. **Exception Handling**: Do not use bare `except:` clauses. Define custom exceptions (e.g., `VOTError`, `VOTAPIError`, `VideoDataError`) inheriting from Python's standard `Exception`.
+5. **Clean Imports**: Use absolute imports (`from vot.client import VOTClient`) or explicit relative imports (`from . import utils`).
+6. **No Global State**: Ensure that instances of the client do not leak state globally. Sessions and configurations should be bound to the client instance.
 
 ---
 
@@ -66,7 +66,8 @@ vot-py/
 
 ## 4. Agent Workflow Rules
 
-1. **Test Before Commit**: You must successfully run `pytest`, `mypy`, and `ruff` before claiming a task is complete or committing changes.
+1. **Test Before Commit**: You must successfully run `uv run pytest`, `uv run mypy src tests`, and `uv run ruff check src tests` before claiming a task is complete or committing changes.
 2. **Modifying Protobufs**: If you update `src/vot/protobuf/yandex.proto`, you MUST execute `./scripts/generate_proto.sh` to regenerate `yandex_pb2.py`.
 3. **CLI Updates**: If you add new functionality to the CLI (`src/vot/cli.py`), make sure to write corresponding tests in `tests/test_cli.py` and update the READMEs.
 4. **Small, Descriptive Commits**: Keep changes atomic and commit messages clear (e.g., `feat: add support for new video host`, `fix: resolve mypy typing error in client`).
+5. **Bilingual Documentation**: User-facing documentation (`README.md`, `docs/api.md`) must be maintained in both English and Russian (`README.ru.md`, `docs/api.ru.md`).
