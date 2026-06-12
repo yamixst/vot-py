@@ -4,11 +4,33 @@ version = "0.1.0"
 description = "A Python port of the vot.js library for interacting with Yandex Video Translation API"
 readme = "README.md"
 requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+    { name = "yamixst" }
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+    "Topic :: Multimedia :: Video",
+]
+keywords = ["yandex", "video", "translation", "subtitles", "voiceover", "vot", "vot-py"]
 dependencies = [
     "httpx>=0.24.0",
     "protobuf>=4.21.0",
     "pydantic>=2.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/yamixst/vot-py"
+Repository = "https://github.com/yamixst/vot-py"
+Issues = "https://github.com/yamixst/vot-py/issues"
+Documentation = "https://github.com/yamixst/vot-py/tree/main/docs"
 
 [project.optional-dependencies]
 dev = [
