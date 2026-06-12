@@ -169,23 +169,46 @@ json_data = convert_subs(vtt_data, output="json")
 
 ## CLI Usage
 
-The library includes a CLI tool named `vot` that prints response URLs, polls translation status, and downloads audio or subtitles.
+The library includes a CLI tool that prints response URLs, polls translation status, and downloads audio or subtitles.
 
-**Display help:**
-```bash
-vot --help
-```
+### Running the CLI
+Depending on your installation, you can run the CLI in one of the following ways:
+- **If installed:**
+  ```bash
+  vot <args>
+  ```
+- **Locally (during development, using the helper script):**
+  ```bash
+  ./vot-cli <args>
+  ```
+- **Directly via Python:**
+  ```bash
+  python -m vot.cli <args>
+  # Or via uv:
+  uv run python -m vot.cli <args>
+  ```
 
-**Examples:**
+### CLI Arguments
+
+| Option | Shorthand | Description | Default |
+|--------|-----------|-------------|---------|
+| `url` | *Positioned* | URL of the video to translate (e.g. YouTube, Vimeo, Twitch, VK, TikTok) | *Required* |
+| `--lang-from` | `-f` | Source language of the video (e.g., `en`, `de`, `zh`, or `auto`) | `en` |
+| `--lang-to` | `-t` | Target language of the translation (e.g., `ru`, `en`, `kk`) | `ru` |
+| `--output` | `-o` | Save the translated audio file to this local path | None |
+| `--subtitles` | `-s` | Fetch and print available subtitle links | `False` |
+| `--output-subs` | | Save the translated subtitles file to this local path (supports `.srt`, `.vtt`, `.json`) | None |
+
+### Examples
 
 1. **Get translation audio link (with status polling):**
    ```bash
    vot https://www.youtube.com/watch?v=dQw4w9WgXcQ
    ```
 
-2. **Translate and download the audio locally:**
+2. **Translate from German to Russian and download the audio locally:**
    ```bash
-   vot https://www.youtube.com/watch?v=dQw4w9WgXcQ -o output.mp3
+   vot https://www.youtube.com/watch?v=dQw4w9WgXcQ -f de -t ru -o output.mp3
    ```
 
 3. **Request translation and print subtitle links:**
@@ -193,7 +216,7 @@ vot --help
    vot https://www.youtube.com/watch?v=dQw4w9WgXcQ -s
    ```
 
-4. **Download and convert subtitles (e.g. to SRT, VTT, or JSON):**
+4. **Download and convert subtitles to SRT:**
    ```bash
    vot https://www.youtube.com/watch?v=dQw4w9WgXcQ --output-subs subs.srt
    ```
