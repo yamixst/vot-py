@@ -1,48 +1,48 @@
 # vot-py
 
-`vot-py` — это современная, быстрая и полностью типизированная библиотека на Python для взаимодействия с **Yandex Video Translation API** (Яндекс Закадровый Перевод Видео). Данная библиотека является портом популярной TypeScript-библиотеки `vot.js`.
+`vot-py` is a modern, fast, and fully type-safe Python library for interacting with the **Yandex Video Translation API**. This library is a Python port of the popular TypeScript library `vot.js`.
 
-Библиотека позволяет отправлять запросы на перевод видео, опрашивать статус готовности, получать ссылки на сгенерированные аудиодорожки перевода, извлекать субтитры (оригинальные и переведенные), а также работать со стримами в реальном времени.
-
----
-
-## Оглавление
-1. [Установка](#установка)
-2. [Быстрый старт](#быстрый-старт)
-   - [Асинхронный клиент (Рекомендуется)](#асинхронный-клиент-рекомендуется)
-   - [Синхронный клиент](#синхронный-клиент)
-3. [Основные возможности и модули](#основные-возможности-и-модули)
-   - [Автоматическое определение сервиса и извлечение ID](#автоматическое-определение-сервиса-и-извлечение-id)
-   - [Перевод видео](#перевод-видео)
-   - [Получение субтитров](#получение-субтитров)
-   - [Работа со стримами](#работа-со-стримами)
-   - [Конвертация форматов субтитров](#конвертация-форматов-субтитров)
-4. [Использование CLI (Консольной утилиты)](#использование-cli-консольной-утилиты)
-5. [Разработка и тестирование](#разработка-и-тестирование)
+It allows you to request video translations, poll processing status, obtain translated voice-over audio URLs, fetch original and translated subtitles, download and convert subtitle formats, and translate live streams in real time.
 
 ---
 
-## Установка
+## Table of Contents
+1. [Installation](#installation)
+2. [Quick Start](#quick-start)
+   - [Async Client (Recommended)](#async-client-recommended)
+   - [Sync Client](#sync-client)
+3. [Key Features & Modules](#key-features--modules)
+   - [Service Routing & ID Extraction](#service-routing--id-extraction)
+   - [Video Translation](#video-translation)
+   - [Fetching Subtitles](#fetching-subtitles)
+   - [Live Streams](#live-streams)
+   - [Subtitles Conversion](#subtitles-conversion)
+4. [CLI Usage](#cli-usage)
+5. [Development & Testing](#development--testing)
 
-Для установки библиотеки в режиме редактирования или локального использования:
+---
+
+## Installation
+
+To install the library in editable/local mode:
 
 ```bash
-# С использованием стандартного pip
+# Using pip
 pip install -e .
 
-# Или с использованием uv (рекомендуется)
+# Or using uv (recommended)
 uv pip install -e .
 ```
 
-Пакет автоматически зарегистрирует команду `vot` в вашей системе для использования через консоль.
+The package automatically registers the `vot` executable command in your path.
 
 ---
 
-## Быстрый старт
+## Quick Start
 
-### Асинхронный клиент (Рекомендуется)
+### Async Client (Recommended)
 
-Основной клиент библиотеки построен на базе асинхронного `httpx.AsyncClient`.
+The core client uses `httpx.AsyncClient` underneath.
 
 ```python
 import asyncio
@@ -50,163 +50,168 @@ import httpx
 from vot import VOTClient, get_video_data
 
 async def main():
-    # Инициализируем HTTP-клиент
+    # Initialize HTTP client
     async with httpx.AsyncClient() as http_client:
-        # Инициализируем VOTClient
+        # Initialize VOTClient
         client = VOTClient(client=http_client)
         
-        # Разрешаем URL видео (автоматически определяет хостинг, извлекает ID и метаданные)
+        # Resolve video URL (automatically detects service, extracts video ID & metadata)
         url = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
         video_data = await get_video_data(url, client=http_client)
         
-        print(f"Сервис: {video_data.host}, ID Видео: {video_data.video_id}")
+        print(f"Service: {video_data.host}, Video ID: {video_data.video_id}")
         
-        # Запрашиваем перевод видео
+        # Request video translation
         response = await client.translate_video(video_data)
         
         if response.translated:
-            print(f"Перевод готов! Ссылка на аудио: {response.url}")
+            print(f"Translation finished! Audio URL: {response.url}")
         else:
-            print(f"Перевод в процессе. Повторите через {response.remaining_time} сек. (Статус: {response.status})")
+            print(f"Translation in progress. Retry in {response.remaining_time}s. (Status: {response.status})")
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-### Синхронный клиент
+### Sync Client
 
-Если ваше приложение написано в синхронном стиле, вы можете использовать `VOTClientSync`, который берет на себя управление циклом событий (event loop).
+If your application uses synchronous code, you can use `VOTClientSync`, which handles the event loop automatically.
 
 ```python
 from vot import VOTClientSync, get_video_data
 import httpx
 
-# VOTClientSync поддерживает контекстный менеджер
+# VOTClientSync supports the context manager protocol
 with VOTClientSync() as client:
-    # Для разрешения URL видео все еще требуется http-клиент (синхронный или асинхронный)
+    # Resolving video data still requires an HTTP client
     with httpx.Client() as http_client:
-        # Поскольку get_video_data асинхронный, мы можем выполнить его через внутренний раннер
+        # Since get_video_data is async, we run it using the client's loop runner helper
         video_data = client._run(get_video_data("https://www.youtube.com/watch?v=dQw4w9WgXcQ"))
         
-    # Запрос перевода происходит синхронно
+    # Request translation synchronously
     response = client.translate_video(video_data)
     if response.translated:
-        print(f"Аудио перевода: {response.url}")
+        print(f"Voiceover Audio URL: {response.url}")
 ```
 
 ---
 
-## Основные возможности и модули
+## Key Features & Modules
 
-### Автоматическое определение сервиса и извлечение ID
+### Service Routing & ID Extraction
 
-Функция `get_video_data` принимает на вход URL видео, сверяет его со встроенным реестром поддерживаемых сайтов (YouTube, Vimeo, Twitch, VK, TikTok, custom-ссылки и др.), извлекает уникальный идентификатор видео и возвращает объект `VideoData`.
+`get_video_data` parses a video page URL, matches it against a registry of supported hosting sites (YouTube, Vimeo, Twitch, VK, TikTok, custom direct links, etc.), extracts the identifier, and returns a structured `VideoData` object.
 
 ```python
 from vot import get_video_data
 
-# Поддерживает YouTube (watch-страницы, shorts, live, embed, share-ссылки)
+# YouTube support includes watch links, shorts, live streams, embed links, and share URLs
 video_data = await get_video_data("https://youtu.be/dQw4w9WgXcQ")
 print(video_data.video_id)  # "dQw4w9WgXcQ"
 print(video_data.host)      # "youtube"
 ```
 
-### Перевод видео
+### Video Translation
 
-Метод `translate_video` отправляет сериализованный Protobuf-запрос к API Яндекса для генерации аудиодорожки.
-* **Параметры перевода:**
-  - `request_lang`: Исходный язык видео (например, `"en"`, `"de"`, `"zh"` или `"auto"`).
-  - `response_lang`: Язык озвучки перевода (например, `"ru"`, `"en"`, `"kk"`).
-* **Специфика новых видео:** Если новое видео на YouTube еще ни разу не переводилось, Яндекс требует отправить фиктивный файл отчета об ошибке аудио плеера Яндекса (`fail-audio-js`). Библиотека делает это **автоматически** при первом обращении, если передан параметр `should_send_failed_audio=True`.
+`translate_video` serializes a Protobuf payload and sends a signed request to Yandex API.
+* **Translation Settings:**
+  - `request_lang`: Source video language (e.g. `"en"`, `"de"`, `"zh"`, or `"auto"`).
+  - `response_lang`: Target translation language (e.g. `"ru"`, `"en"`, `"kk"`).
+* **Initial YouTube Videos Upload:** For brand new YouTube videos that have never been translated by Yandex before, Yandex requires uploading a mock audio player error report (`fail-audio-js`). This library performs that upload **automatically** if `should_send_failed_audio=True` (default).
 
-### Получение субтитров
+### Fetching Subtitles
 
-Метод `get_subtitles` возвращает структурированный ответ со списком доступных субтитров, включая ссылки на оригинальные субтитры и на их переводы от Яндекса.
+`get_subtitles` retrieves a list of available subtitles, containing links to the original subtitles as well as machine-translated subtitles generated by Yandex.
 
 ```python
 subs_response = await client.get_subtitles(video_data)
 for sub in subs_response.subtitles:
-    print(f"Язык оригинала: {sub.language} -> URL: {sub.url}")
+    print(f"Original Language: {sub.language} -> URL: {sub.url}")
     if sub.translated_url:
-        print(f"Перевод на: {sub.translated_language} -> URL: {sub.translated_url}")
+        print(f"Translated to: {sub.translated_language} -> URL: {sub.translated_url}")
 ```
 
-### Работа со стримами
+### Live Streams
 
-Библиотека поддерживает синхронный и асинхронный перевод прямых трансляций.
-1. `translate_stream` — инициирует перевод потока и возвращает M3U8 плейлист перевода.
-2. `ping_stream` — периодический запрос поддержания сессии перевода стрима (keep-alive).
+The library supports translating ongoing live broadcasts.
+1. `translate_stream` — Initiates stream translation and returns an M3U8 translated playlist URL.
+2. `ping_stream` — Sends periodic keep-alive requests to keep the translation session alive.
 
 ```python
 stream_res = await client.translate_stream(video_data)
 if stream_res.translated:
-    print(f"M3U8 плейлист трансляции: {stream_res.result.url}")
-    # Запускаем ping-цикл в фоновом режиме для поддержания активности
+    print(f"Translated stream M3U8: {stream_res.result.url}")
+    # Run ping loop in the background to maintain session
     await client.ping_stream(stream_res.ping_id)
 ```
 
-### Конвертация форматов субтитров
+### Subtitles Conversion
 
-Утилита `convert_subs` позволяет бесшовно конвертировать форматы субтитров между **JSON** (внутренний формат Яндекса), **SRT** и **VTT**:
+`convert_subs` allows converting between **JSON** (Yandex's internal format), **SRT**, and **VTT** formats:
 
 ```python
 from vot import convert_subs
 
-# Пример: Конвертация VTT-субтитров в SRT
-vtt_data = "WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nПривет, мир!"
+# Convert VTT format to SRT
+vtt_data = "WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nHello, world!"
 srt_data = convert_subs(vtt_data, output="srt")
 print(srt_data)
-# Выведет:
+# Output:
 # 1
 # 00:00:01,000 --> 00:00:03,000
-# Привет, мир!
+# Hello, world!
 
-# Конвертация VTT в JSON Яндекса
+# Convert VTT to Yandex JSON format
 json_data = convert_subs(vtt_data, output="json")
 ```
 
 ---
 
-## Использование CLI (Консольной утилиты)
+## CLI Usage
 
-Пакет поставляется со встроенной консольной утилитой `vot`, которая опрашивает API в реальном времени и умеет сохранять аудиофайл перевода.
+The library includes a CLI tool named `vot` that prints response URLs, polls translation status, and downloads audio or subtitles.
 
-**Вызов справки:**
+**Display help:**
 ```bash
 vot --help
 ```
 
-**Примеры использования:**
+**Examples:**
 
-1. **Получить ссылку на переведённую дорожку (с авто-опросом статуса):**
+1. **Get translation audio link (with status polling):**
    ```bash
    vot https://www.youtube.com/watch?v=dQw4w9WgXcQ
    ```
 
-2. **Перевести видео и скачать аудиофайл перевода локально:**
+2. **Translate and download the audio locally:**
    ```bash
-   vot https://www.youtube.com/watch?v=dQw4w9WgXcQ -o my_translation.mp3
+   vot https://www.youtube.com/watch?v=dQw4w9WgXcQ -o output.mp3
    ```
 
-3. **Запросить перевод с конкретного языка на русский и вывести ссылки на субтитры:**
+3. **Request translation and print subtitle links:**
    ```bash
-   vot https://www.youtube.com/watch?v=dQw4w9WgXcQ -f en -t ru -s
+   vot https://www.youtube.com/watch?v=dQw4w9WgXcQ -s
+   ```
+
+4. **Download and convert subtitles (e.g. to SRT, VTT, or JSON):**
+   ```bash
+   vot https://www.youtube.com/watch?v=dQw4w9WgXcQ --output-subs subs.srt
    ```
 
 ---
 
-## Разработка и тестирование
+## Development & Testing
 
-Для запуска тестов, проверки статической типизации и форматирования кода в репозитории:
+To run tests, typecheck, or format the codebase:
 
 ```bash
-# Запуск тестов (100% прохождение с моками)
-.venv/bin/pytest
+# Run test suite (mocked)
+uv run pytest
 
-# Статическая проверка типов
-.venv/bin/mypy src
+# Check static types
+uv run mypy src tests
 
-# Линтер и форматирование кода
-.venv/bin/ruff check src
-.venv/bin/ruff format --check src
+# Run linter and formatting checks
+uv run ruff check src tests
+uv run ruff format --check src tests
 ```
