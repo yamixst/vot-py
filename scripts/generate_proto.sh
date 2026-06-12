@@ -5,7 +5,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-PROTO_SRC_DIR="/home/xst/prj/yavot/vot.js/packages/shared/src/protos"
+PROTO_SRC_DIR="$PROJECT_ROOT/src/vot/protobuf"
 PROTO_OUT_DIR="$PROJECT_ROOT/src/vot/protobuf"
 
 # Create output directory if it doesn't exist
