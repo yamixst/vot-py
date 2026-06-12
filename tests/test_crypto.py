@@ -1,8 +1,14 @@
-import hmac
-import hashlib
 import base64
-from vot.utils.crypto import get_uuid, get_signature, get_sec_ya_headers, get_hmac_sha1, BROWSER_SEC_HEADERS
-from vot.config import HMAC_KEY, COMPONENT_VERSION
+import hashlib
+import hmac
+
+from vot.config import HMAC_KEY
+from vot.utils.crypto import (
+    get_hmac_sha1,
+    get_sec_ya_headers,
+    get_signature,
+    get_uuid,
+)
 
 
 def test_get_uuid() -> None:

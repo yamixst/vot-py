@@ -14,6 +14,7 @@ async def run_translation(
     lang_to: str,
     output_path: str | None = None,
     fetch_subs: bool = False,
+    output_subs_path: str | None = None,
 ) -> None:
     async with httpx.AsyncClient(timeout=15.0) as http_client:
         client = VOTClient(
@@ -69,20 +70,94 @@ async def run_translation(
                 print(f"\nAPI Error: {e}", file=sys.stderr)
                 sys.exit(1)
 
-        # Retrieve subtitles if requested
-        if fetch_subs:
+        # Retrieve subtitles if requested or output path is provided
+        if fetch_subs or output_subs_path:
             print("\nFetching subtitles...")
             try:
                 subs_response = await client.get_subtitles(video_data, request_lang=lang_from)
                 if subs_response.subtitles:
-                    print(f"Found {len(subs_response.subtitles)} subtitles:")
-                    for idx, sub in enumerate(subs_response.subtitles):
-                        print(
-                            f"  [{idx + 1}] Language: {sub.language} -> {sub.translated_language or ''}"
-                        )
-                        print(f"      Original Subtitle URL: {sub.url}")
-                        if sub.translated_url:
-                            print(f"      Translated Subtitle URL: {sub.translated_url}")
+                    if fetch_subs:
+                        print(f"Found {len(subs_response.subtitles)} subtitles:")
+                        for idx, sub in enumerate(subs_response.subtitles):
+                            print(
+                                f"  [{idx + 1}] Language: {sub.language} -> {sub.translated_language or ''}"
+                            )
+                            print(f"      Original Subtitle URL: {sub.url}")
+                            if sub.translated_url:
+                                print(f"      Translated Subtitle URL: {sub.translated_url}")
+
+                    if output_subs_path:
+                        sub_to_download = None
+                        # Prefer translated subtitles
+                        for sub in subs_response.subtitles:
+                            if sub.translated_url:
+                                sub_to_download = sub.translated_url
+                                break
+                        if not sub_to_download and subs_response.subtitles[0].url:
+                            sub_to_download = subs_response.subtitles[0].url
+
+                        if sub_to_download:
+                            print(f"Downloading subtitles to {output_subs_path}...")
+                            subs_res = await http_client.get(sub_to_download)
+                            if subs_res.status_code == 200:
+                                content = subs_res.text
+
+                                ext_from = (
+                                    "vtt"
+                                    if ".vtt" in sub_to_download
+                                    else "json"
+                                    if ".json" in sub_to_download
+                                    else "srt"
+                                )
+                                ext_to = (
+                                    output_subs_path.split(".")[-1].lower()
+                                    if "." in output_subs_path
+                                    else "vtt"
+                                )
+
+                                if ext_to in ("srt", "vtt", "json") and ext_from != ext_to:
+                                    import json
+
+                                    from vot.utils.subs import convert_subs
+
+                                    try:
+                                        if ext_from == "json":
+                                            raw_data = json.loads(content)
+                                        else:
+                                            raw_data = content
+
+                                        converted = convert_subs(raw_data, output=ext_to)
+
+                                        if ext_to == "json":
+                                            content_to_write = json.dumps(
+                                                converted, ensure_ascii=False, indent=2
+                                            )
+                                        else:
+                                            content_to_write = str(converted)
+
+                                        with open(output_subs_path, "w", encoding="utf-8") as f:
+                                            f.write(content_to_write)
+                                        print(
+                                            f"Subtitles converted from {ext_from.upper()} to {ext_to.upper()} and saved successfully!"
+                                        )
+                                    except Exception as err:
+                                        print(
+                                            f"Failed to convert subtitles format: {err}. Saving raw file instead.",
+                                            file=sys.stderr,
+                                        )
+                                        with open(output_subs_path, "wb") as f:
+                                            f.write(subs_res.content)
+                                else:
+                                    with open(output_subs_path, "wb") as f:
+                                        f.write(subs_res.content)
+                                    print("Subtitles saved successfully!")
+                            else:
+                                print(
+                                    f"Error downloading subtitles: HTTP {subs_res.status_code}",
+                                    file=sys.stderr,
+                                )
+                        else:
+                            print("No valid subtitle URL found to download.", file=sys.stderr)
                 else:
                     print("No subtitles found.")
             except VOTError as e:
@@ -117,6 +192,10 @@ def main() -> None:
         action="store_true",
         help="Fetch and print available subtitle links",
     )
+    parser.add_argument(
+        "--output-subs",
+        help="Save the translated subtitles file to this local path (supports .srt, .vtt, .json)",
+    )
 
     args = parser.parse_args()
 
@@ -128,6 +207,7 @@ def main() -> None:
                 lang_to=args.lang_to,
                 output_path=args.output,
                 fetch_subs=args.subtitles,
+                output_subs_path=args.output_subs,
             )
         )
     except KeyboardInterrupt:
